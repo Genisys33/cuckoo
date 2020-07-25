@@ -1,0 +1,9 @@
+---
+
+- name: eScan | Check version
+  command: escan --version
+  ignore_errors: yes
+  register: escan_present
+
+- include: install.yml
+  when: escan_present is failed

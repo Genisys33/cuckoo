@@ -1,0 +1,16 @@
+---
+
+# For now, AV is install in Immutability mode
+
+- name: Install dependencies for McAfee installation
+  apt:
+    name: ['unzip', 'curl']
+    state: present
+
+- name: McAfee VSCL | Check version
+  command: /usr/local/uvscan/uvscan --version
+  ignore_errors: yes
+  register: mcafee
+
+- include: install.yml
+  when: mcafee is failed

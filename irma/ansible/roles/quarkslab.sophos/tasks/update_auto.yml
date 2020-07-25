@@ -1,0 +1,4 @@
+---
+
+- name: Sophos | Download updates (may be a few minutes long the first time)
+  command: "{{ sophos_install_dir }}/bin/savupdate"

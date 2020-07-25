@@ -1,0 +1,50 @@
+---
+
+## Define temporary location
+- name: Determine remote_tmp variable
+  raw: CMD /C echo '%TEMP%'
+  register: echo_temp
+
+- set_fact:
+    remote_tmp: '{{ echo_temp.stdout_lines[0] }}'
+
+## Fetch and install packages installer
+- name: Download Windows packages
+  win_get_url:
+    url: "{{ item.url }}"
+    dest: "{{ remote_tmp }}/{{ item.name }}"
+  with_items: "{{ win_packages }}"
+
+- name: Install Windows exe packages
+  win_shell: "Start-Process {{remote_tmp}}\\{{ item.name }} -ArgumentList {{ item.install_args}} -Wait"
+  with_items: "{{ win_packages }}"
+  when: item.type == 'exe'
+
+- name: Install Windows msi packages
+  win_command: "msiexec /i {{remote_tmp}}\\{{ item.name }} {{ item.install_args}}"
+  with_items: "{{ win_packages }}"
+  when: item.type == 'msi'
+
+## cleanup installer
+- name: Remove installer
+  win_file:
+    path: "{{ remote_tmp }}/{{ item.name }}"
+    state: absent
+  with_items: "{{ win_packages }}"
+
+# Update PATH
+
+- name: Get actual PATH
+  raw: $ENV:PATH
+  register: path_out
+
+# Installing pip packages
+- name: Download Pip
+  win_get_url:
+    url: "{{ pip_url }}"
+    dest: "{{ remote_tmp }}/pip-9.0.1-py2.py3-none-any.whl"
+
+- name: Install pip
+  raw: "CMD /C py -3 {{ remote_tmp }}/{{ offline_pip_file }}/pip install --no-index {{ remote_tmp }}/{{ offline_pip_file }}"
+
+- include: pip.yml

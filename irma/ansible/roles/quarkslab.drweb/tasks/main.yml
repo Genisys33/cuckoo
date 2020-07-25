@@ -1,0 +1,11 @@
+---
+
+- name: Dr Web | Check version
+  command: drweb-ctl --version
+  ignore_errors: yes
+  register: drweb_present
+
+- include: install.yml
+  when: drweb_present is failed
+
+- include: configuration.yml

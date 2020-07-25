@@ -1,0 +1,11 @@
+---
+
+- name: VBA32 | Check version
+  command: /opt/vba/vbacl/vbacl
+  args:
+    chdir: /opt/vba/vbacl
+  ignore_errors: yes
+  register: virusblokada_present
+
+- include: install.yml
+  when: virusblokada_present is failed

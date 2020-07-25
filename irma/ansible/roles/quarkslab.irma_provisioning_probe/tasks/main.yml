@@ -1,0 +1,11 @@
+---
+
+- include: linux/provisioning_probe.yml
+  when: "ansible_distribution in ['Debian', 'Ubuntu']"
+  become: yes
+
+- include: windows/provisioning_probe.yml
+  when: "'Windows' in ansible_distribution"
+  become: no
+
+# vim: sw=2

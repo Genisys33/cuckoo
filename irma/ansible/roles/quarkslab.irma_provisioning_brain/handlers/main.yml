@@ -1,0 +1,10 @@
+---
+
+- name: Restart Pure-FTPD daemon
+  service: name=pure-ftpd state=restarted
+  become: yes
+
+- name: Reload UFW
+  ufw:
+    state: reloaded
+  become: yes

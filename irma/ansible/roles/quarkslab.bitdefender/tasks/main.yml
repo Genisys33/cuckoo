@@ -1,0 +1,9 @@
+---
+
+- name: BitDefender | Check version
+  command: bdscan --version
+  ignore_errors: yes
+  register: bitdefender_present
+
+- include: install.yml
+  when: bitdefender_present is failed

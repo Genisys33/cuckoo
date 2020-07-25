@@ -1,0 +1,202 @@
+---
+
+- hosts: all
+  tasks:
+    - import_tasks: check.yml
+
+- name: Common tasks to execute on all Linux servers
+  hosts: frontend:brain:probe:sql-server:!windows
+  become: yes
+  roles:
+    - { role: quarkslab.apt, tags: apt }
+    - { role: franklinkim.ufw, tags: ufw }
+    - { role: quarkslab.irma_provisioning_common, tags: common }
+    - { role: mivok0.users, tags: users }
+    - { role: franklinkim.sudo, tags: sudo }
+    - { role: willshersystems.sshd, tags: openssh }
+
+- name: Manage infra files
+  hosts: localhost
+  connection: local
+  roles:
+    - { role: quarkslab.local_manage_infra, tags: infra}
+
+- name: SQL server provisioning
+  hosts: sql-server
+  become: yes
+  roles:
+    - { role: ANXS.postgresql, tags: postgresql }
+    - { role: quarkslab.irma_provisioning_sql_server, tags: sql-server }
+
+- name: Frontend provisioning
+  hosts: frontend
+  become: yes
+  roles:
+    - { role: quarkslab.nodejs, tags: nodejs, when: irma_environment != 'production' }
+    - { role: quarkslab.systemd, tags: systemd, systemd_units: "{{ systemd_units_frontend }}" }
+    - { role: quarkslab.rsyslog, tags: rsyslog }
+    - { role: quarkslab.irma_provisioning_frontend, tags: frontend }
+    - { role: jdauphant.nginx, tags: nginx }
+
+
+- name: Brain provisioning
+  hosts: brain
+  become: yes
+  roles:
+    - { role: quarkslab.systemd, tags: systemd, systemd_units: "{{ systemd_units_brain }}" }
+    - { role: quarkslab.rsyslog, tags: rsyslog }
+    - { role: Mayeu.RabbitMQ, tags: rabbitmq }
+   # - { role: quarkslab.pureftpd, tags: pureftpd }
+    - { role: quarkslab.irma_provisioning_brain, tags: brain }
+
+
+# NOTE: moved down sudo attributes as windows does not support sudo.
+- name: Probe provisioning
+  hosts: probe
+  roles:
+    - { role: quarkslab.irma_provisioning_probe, tags: probe }
+    - { role: quarkslab.systemd, become: yes, tags: systemd, systemd_units: "{{ systemd_units_probe }}", when: "ansible_distribution in ['Debian', 'Ubuntu']"}
+    - { role: quarkslab.rsyslog, become: yes, tags: rsyslog, when: "ansible_distribution in ['Debian', 'Ubuntu']"}
+
+# Antivirus section
+# Default role with just install AV / update is done in playbook updating.yml
+- name: ClamAV provisioning
+  hosts: clamav
+  become: yes
+  roles:
+    - { role: quarkslab.clamav, tags: clamav }
+
+- name: ComodoCAVL provisioning
+  hosts: comodo
+  become: yes
+  roles:
+    - { role: quarkslab.comodo_cavl, tags: comodo }
+
+
+- name: Sophos provisioning
+  hosts: sophos
+  become: yes
+  roles:
+    - { role: quarkslab.sophos, tags: sophos }
+
+- name: EsetFileSecurity provisioning
+  hosts: eset-file-security
+  become: yes
+  roles:
+    - { role: quarkslab.eset_file_security, tags: eset_file_security }
+
+- name: McAfee VSCL provisioning
+  hosts: mcafee
+  become: yes
+  roles:
+    - { role: quarkslab.mcafee_vscl, tags: mcafee }
+
+- name: McAfee VSCL provisioning (Windows)
+  hosts: mcafee-win
+  become: no
+  roles:
+    - { role: quarkslab.mcafee_vscl_windows, tags: mcafee-win }
+
+- name: StaticAnalyzer provisioning
+  hosts: static-analyzer
+  become: yes
+  roles:
+    - { role: quarkslab.static_analyzer, tags: static-analyzer }
+
+- name: VirusTotal provisioning
+  hosts: virustotal
+  become: yes
+  roles:
+    - { role: quarkslab.virustotal, tags: virustotal }
+
+- name: AVG provisioning
+  hosts: avg
+  roles:
+    - { role: quarkslab.avg, tags: avg }
+
+- name: AVG provisioning
+  hosts: bitdefender
+  roles:
+    - { role: quarkslab.bitdefender, tags: bitdefender }
+
+- name: EScan provisioning
+  hosts: escan
+  roles:
+    - { role: quarkslab.escan, tags: escan }
+
+- name: VirusBlokAda
+  hosts: virusblokada
+  roles:
+    - { role: quarkslab.virusblokada , tags: virusblokada }
+
+- name: Zoner provisioning
+  hosts: zoner
+  roles:
+    - { role: quarkslab.zoner, tags: zoner }
+
+- name: DrWeb provisioning
+  hosts: drweb
+  roles:
+    - { role: quarkslab.drweb, tags: drweb }
+
+- name: Avast provisioning
+  hosts: avast
+  roles:
+    - { role: quarkslab.avast, tags: avast }
+
+- name: FSecure provisioning
+  hosts: fsecure
+  roles:
+    - { role: quarkslab.fsecure, tags: fsecure }
+
+- name: Kaspersky provisioning
+  hosts: kaspersky
+  roles:
+    - { role: quarkslab.kaspersky, tags: kaspersky }
+
+- name: TrID provisioning
+  hosts: trid
+  roles:
+    - { role: quarkslab.trid, tags: trid }
+
+- name: PEiD provisioning
+  hosts: peid
+  become: yes
+  roles:
+    - { role: quarkslab.peid, tags: peid }
+
+- name: Unarchiver provisioning
+  hosts: unarchiver
+  become: yes
+  roles:
+    - { role: quarkslab.unarchiver, tags: unarchiver }
+
+- name: F-prot provisioning
+  hosts: fprot
+  become: yes
+  roles:
+    - { role: quarkslab.fprot, tags: fprot }
+
+- name: Emsisoft a2cmd provisioning
+  hosts: emsisoft-win
+  roles:
+    - { role: quarkslab.irma_disable_win_updates, tags: emsisoft-win }
+    - { role: quarkslab.emsisoft_a2cmd_windows, tags: emsisoft-win }
+
+- name: LIEF provisioning
+  hosts: lief
+  roles:
+    - { role: quarkslab.lief, tags: lief }
+
+- name: Dummy provisionning
+  hosts: dummy
+  roles:
+    - { role: quarkslab.dummy, tags: dummy }
+
+- name: Eicar provisioning
+  hosts: eicar
+  become: yes
+  roles:
+    - { role: quarkslab.eicar, tags: eicar }
+
+# vim: sw=2

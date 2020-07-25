@@ -1,0 +1,35 @@
+---
+
+- name: Dr Web | Install dependencies
+  apt:
+    name: ['libfontconfig1', 'libxrender1', 'libglib2.0-0', 'libxi6', 'xauth']
+    state: present
+  become: yes
+
+- name: Dr Web | Create temporary work dir
+  file:
+    path: "{{ drweb_temp_dir }}/"
+    state: directory
+
+- name: Dr Web | Importing PGP public key
+  apt_key:
+    url: http://repo.drweb.com/drweb/drweb.key
+    state: present
+  become: yes
+
+- name: Dr Web | Adding Repository
+  apt_repository:
+    repo: deb http://repo.drweb.com/drweb/debian 11.0 non-free
+    state: present
+  become: yes
+
+- name: Dr Web | Installing from repository
+  apt:
+    name: drweb-file-servers
+    update_cache: yes
+  become: yes
+
+- name: Dr Web | Remove Temporary work dir
+  file:
+    path: "{{ drweb_temp_dir }}/"
+    state: absent

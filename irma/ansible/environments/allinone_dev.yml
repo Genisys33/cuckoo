@@ -1,0 +1,40 @@
+---
+
+servers:
+  - name: brain.irma
+    ip: 172.16.1.30
+    ansible_groups: [frontend, sql-server, brain, eicar, lief, trid]
+    box: quarkslab/debian-9.0.0-amd64
+    cpus: 2
+    memory: 2048
+    shares:
+      - share_from: ../common
+        share_to: /opt/irma/irma-common/releases/sync
+        share_exclude:
+          - .git/
+          - venv/
+      - share_from: ../frontend
+        share_to: /opt/irma/irma-frontend/releases/sync
+        share_exclude:
+          - .git/
+          - venv/
+          - web/dist
+          - web/node_modules
+      - share_from: ../brain
+        share_to: /opt/irma/irma-brain/releases/sync
+        share_exclude:
+          - .git/
+          - venv/
+          - db/
+      - share_from: ../probe
+        share_to: /opt/irma/irma-probe/releases/sync
+        share_exclude:
+          - .git/
+          - venv/
+
+libvirt_config:
+  driver: kvm
+
+ansible_vars:
+  irma_environment: development
+  vagrant: true

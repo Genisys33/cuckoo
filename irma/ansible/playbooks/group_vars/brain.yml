@@ -1,0 +1,192 @@
+---
+
+## Global
+brain_project_dir: "{{ irma_install_dir }}/irma-brain"
+brain_install_dir: "{{ brain_project_dir }}/current"
+brain_venv_dir: "{{ brain_install_dir }}/venv"
+
+brain_user: "{{ default_user }}"
+brain_group: "{{ default_group }}"
+
+
+## Deployment
+brain_deployment_configs:
+  - section: broker_brain
+    option: host
+    value: "{{ brain_addr }}"
+  - section: broker_brain
+    option: port
+    value: "{{ rabbitmq_configuration.port}}"
+  - section: broker_brain
+    option: vhost
+    value: "{{ rabbitmq_configuration.brain.vhost}}"
+  - section: broker_brain
+    option: username
+    value: "{{ rabbitmq_configuration.brain.user}}"
+  - section: broker_brain
+    option: password
+    value: "{{ rabbitmq_configuration.brain.password }}"
+  - section: broker_probe
+    option: host
+    value: "{{ brain_addr }}"
+  - section: broker_probe
+    option: port
+    value: "{{ rabbitmq_configuration.port }}"
+  - section: broker_probe
+    option: vhost
+    value: "{{ rabbitmq_configuration.probe.vhost }}"
+  - section: broker_probe
+    option: username
+    value: "{{ rabbitmq_configuration.probe.user }}"
+  - section: broker_probe
+    option: password
+    value: "{{ rabbitmq_configuration.probe.password }}"
+  - section: broker_frontend
+    option: host
+    value: "{{ brain_addr }}"
+  - section: broker_frontend
+    option: port
+    value: "{{ rabbitmq_configuration.port }}"
+  - section: broker_frontend
+    option: vhost
+    value: "{{ rabbitmq_configuration.frontend.vhost }}"
+  - section: broker_frontend
+    option: username
+    value: "{{ rabbitmq_configuration.frontend.user }}"
+  - section: broker_frontend
+    option: password
+    value: "{{ rabbitmq_configuration.frontend.password }}"
+  - section: ftp_brain
+    option: host
+    value: "{{ brain_addr }}"
+  - section: ftp_brain
+    option: username
+    value: "{{ ftpd_configuration.probe.username }}"
+  - section: ftp_brain
+    option: password
+    value: "{{ ftpd_configuration.probe.password }}"
+  - section: ssl_config
+    option: activate_ssl
+    value: "{{ rabbitmq_ssl }}"
+  - section: ssl_config
+    option: ca_certs
+    value: "{{ dst_pki_folder }}/rabbitmq-ca.crt"
+  - section: ssl_config
+    option: keyfile
+    value: "{{ dst_pki_folder }}/brain-client.key"
+  - section: ssl_config
+    option: certfile
+    value: "{{ dst_pki_folder }}/brain-client.crt"
+
+## UFW Rules
+brain_ufw_additional_rules:
+  - port: 21
+    rule: allow
+    proto: tcp
+  - port: "{{ rabbimq_ssl_port if rabbitmq_ssl else rabbimq_tcp_port }}"
+    rule: allow
+    proto: tcp
+  #- port: "65435:65535"
+  #  rule: allow
+  #  proto: tcp
+
+
+## RabbitMQ role
+rabbitmq_os_package: true
+rabbitmq_conf_tcp_listeners_address: "{{ '' if rabbitmq_ssl else '0.0.0.0' }}"
+rabbitmq_conf_tcp_listeners_port: "{{ rabbimq_tcp_port }}"
+rabbitmq_conf_ssl_listeners_address: 0.0.0.0
+rabbitmq_conf_ssl_listeners_port: "{{ rabbimq_ssl_port }}"
+rabbitmq_plugins:
+  - rabbitmq_management
+  - rabbitmq_management_agent
+  - rabbitmq_management_visualiser
+rabbitmq_vhost_definitions:
+  - name: "{{ rabbitmq_configuration.brain.vhost }}"
+  - name: "{{ rabbitmq_configuration.frontend.vhost }}"
+  - name: "{{ rabbitmq_configuration.probe.vhost }}"
+
+rabbitmq_users_definitions:
+  - vhost: "{{ rabbitmq_configuration.admin.vhost }}"
+    user: "{{ rabbitmq_configuration.admin.user }}"
+    password: "{{ rabbitmq_configuration.admin.password }}"
+    tags: "{{ rabbitmq_configuration.admin.tags }}"
+  - vhost: "{{ rabbitmq_configuration.brain.vhost }}"
+    user: "{{ rabbitmq_configuration.brain.user }}"
+    password: "{{ rabbitmq_configuration.brain.password }}"
+  - vhost: "{{ rabbitmq_configuration.frontend.vhost }}"
+    user: "{{ rabbitmq_configuration.frontend.user }}"
+    password: "{{ rabbitmq_configuration.frontend.password }}"
+  - vhost: "{{ rabbitmq_configuration.probe.vhost }}"
+    user: "{{ rabbitmq_configuration.probe.user }}"
+    password: "{{ rabbitmq_configuration.probe.password }}"
+
+## Pure-FTPD role
+#Standalone role
+#pureftpd_options:
+#  CreateHomeDir: "yes"
+#  PAMAuthentication: "no"
+#  TLS: "2"
+#  PassivePortRange: "65435 65535"
+#  # NOTE: vulnerable to POODLE but cannot find a workaround to make
+#  # Python's 2.7.9 ftplib module work with Debian 8.1 pure-ftpd configured with
+#  # TLSv1 only (-S:HIGH:MEDIUM:+TLSv1:!SSLv2:!SSLv3)
+#  TLSCipherSuite: "-S:HIGH:MEDIUM:+TLSv1"
+
+## SSHD SFTP server
+sshd_sftp_server: internal-sftp
+sshd_match:
+  - Condition: "User {{ ftpd_configuration.frontend.username }}"
+    X11Forwarding: no
+    AllowTcpForwarding: no
+    PermitTunnel: no
+    ChrootDirectory: "{{ brain_sftpd_rootdir }}/{{ ftpd_configuration.frontend.username}}"
+    ForceCommand: "{{ sshd_sftp_server }} -u 2"
+  - Condition: "User {{ ftpd_configuration.probe.username }}"
+    X11Forwarding: no
+    AllowTcpForwarding: no
+    PermitTunnel: no
+    ChrootDirectory: "{{ brain_sftpd_rootdir }}"
+    ForceCommand: "{{ sshd_sftp_server }} -u 2"
+
+## Brain role PureFtpd
+#brain_pureftpd_virtual_users:
+#  - username: "{{ ftpd_configuration.frontend.username }}"
+#    virtual_user: "ftpuser"
+#    virtual_home: "/home/ftpuser/frontend"
+#    password: "{{ ftpd_configuration.frontend.password }}"
+#  - username: "{{ ftpd_configuration.probe.username }}"
+#    virtual_user: "ftpuser"
+#    virtual_home: "/home/ftpuser"
+#    password: "{{ ftpd_configuration.probe.password }}"
+
+#brain_pureftpd_openssl_subj: "/C=FR/ST=Paris/L=Paris/O=IRMA"
+
+# Brain role
+brain_sftpd_groupname: sftpusers
+brain_sftpd_rootdir: /sftp
+brain_sftpd_default_upload_dir : uploads
+
+brain_sftpd_virtual_users:
+  - username: "{{ ftpd_configuration.frontend.username }}"
+    password: "{{ ftpd_configuration.frontend.password }}"
+  - username: "{{ ftpd_configuration.probe.username }}"
+    password: "{{ ftpd_configuration.probe.password }}"
+
+brain_sftpd_virtual_writers:
+  - user: "{{ ftpd_configuration.frontend.username }}"
+
+## Systemd role
+systemd_units_brain:
+  - name: "{{ irma_unit_prefix }}scan_app.service"
+    Service:
+      ExecStart: "{{ brain_venv_dir }}/bin/python -m brain.scan_tasks"
+      WorkingDirectory: "{{ brain_install_dir }}"
+      SyslogIdentifier: "{{ syslog_identifiers.brain_scan.name }}"
+  - name: "{{ irma_unit_prefix }}result_app.service"
+    Service:
+      ExecStart: "{{ brain_venv_dir }}/bin/python -m brain.results_tasks"
+      WorkingDirectory: "{{ brain_install_dir }}"
+      SyslogIdentifier: "{{ syslog_identifiers.brain_results.name }}"
+
+# vim: sw=2

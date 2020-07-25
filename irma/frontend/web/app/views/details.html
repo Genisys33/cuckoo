@@ -1,0 +1,244 @@
+<div class="row">
+  <div class="col-md-9" role="main">
+    <p><a href="/scan/{{vm.results.scan_id}}">Back to the scan summary</a></p>
+
+    <div id="history">
+      <h3>
+        Timeline
+        (<ng-pluralize
+          count="vm.results.other_results.length"
+          when="{'1': '1 scan', 'other': '{} scans'}"></ng-pluralize>)
+      </h3>
+      <h5>Current: {{ vm.results.scan_date | amDateFormat: 'lll' }}</h5>
+
+      <div id="timeline">
+        <div class="t-legend">
+          <div ng-repeat="label in vm.timeline.labels">
+            <div class="t-label" style="left: {{ label.leftShiftPercentage }}%;">{{ label.year }}</div>
+          </div>
+        </div>
+        <div class="t-line">
+          <div
+             ng-repeat="res in vm.results.other_results"
+             class="t-marker {{ (vm.results.result_id === res.result_id) ? 'active' : '' }} {{ (res.status === 1) ? 't-danger' : 't-ok' }}"
+             ng-click="vm.goTo('results/' + res.result_id)"
+             data-toggle="tooltip"
+             title="{{ res.scan_date | amDateFormat:'lll' }}"
+             style="left: {{ vm.timeline.getMarkerLeftShiftPercentage(res.scan_date) }}%;">
+          </div>
+        </div>
+      </div>
+
+      <a href="/results/{{ vm.timeline.nextResultId || '' }}" id="next-result" class="btn" ng-disabled="!vm.timeline.nextResultId">
+        Next <span class="glyphicon glyphicon-arrow-right"></span>
+      </a>
+      <a href="/results/{{ vm.timeline.previousResultId || '' }}" id="previous-result" class="btn" ng-disabled="!vm.timeline.previousResultId">
+        <span class="glyphicon glyphicon-arrow-left"></span> Previous
+      </a>
+    </div>
+
+    <div class="result-section">
+      <h2 id="file-informations">File informations</h2>
+      <tags-input
+        ng-model="vm.results.file_infos.tags"
+        on-tag-added="vm.tagAdded($tag)"
+        on-tag-removed="vm.tagRemoved($tag)"
+        add-from-autocomplete-only="true">
+        <auto-complete
+          load-on-down-arrow="true"
+          load-on-empty="true"
+          load-on-focus="true"
+          min-length="0"
+          source="vm.searchTags($query)">
+        </auto-complete>
+      </tags-input>
+      <table class="table table-bordered">
+        <tbody>
+          <tr>
+            <th>Filename</th>
+            <td>{{ vm.results.name }}</td>
+          </tr>
+          <tr>
+            <th>Size (bytes)</th>
+            <td>{{ vm.results.file_infos.size }}</td>
+          </tr>
+          <tr>
+            <th>Mimetype</th>
+            <td>{{ vm.results.file_infos.mimetype }}</td>
+          </tr>
+          <tr>
+            <th>MD5</th>
+            <td>{{ vm.results.file_infos.md5 }}</td>
+          </tr>
+          <tr>
+            <th>SHA1</th>
+            <td>{{ vm.results.file_infos.sha1 }}</td>
+          </tr>
+          <tr>
+            <th>SHA256</th>
+            <td>{{ vm.results.file_infos.sha256 }}</td>
+          </tr>
+          <tr>
+            <th>First Scan</th>
+            <td>{{ vm.results.file_infos.timestamp_first_scan | amDateFormat:'lll' }}</td>
+          </tr>
+          <tr>
+            <th>Last Scan</th>
+            <td>{{ vm.results.file_infos.timestamp_last_scan | amDateFormat:'lll' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="result-section">
+      <div ng-show="probesAntivirus">
+          <h2 id="antivirus">Antivirus</h2>
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Result</th>
+                <th>Version</th>
+                <th>Virus DB Version</th>
+                <th>Duration (in secs)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr ng-repeat="(name, probe) in probesAntivirus = vm.results.probe_results.antivirus" ng-class="(probe.status == 0) ? 'success' : (probe.status == 1) ? 'danger' : 'warning' ">
+                <th>{{ name }}</th>
+                <td ng-if="probe.status == 1">{{ probe.results }}</td>
+                <td ng-if="probe.status == 0"></td>
+                <td ng-if="probe.status == -1"><i style="text-align: center;" class="glyphicon glyphicon-exclamation-sign" title="Antivirus scan ended up in an error state :("></i></td>
+                <td>{{ probe.version }}</td>
+                <td>{{ probe.virus_database_version || '' }}</td>
+                <td>{{ probe.duration }}</td>
+              </tr>
+            </tbody>
+          </table>
+      </div>
+
+      <div ng-show="probesMetadata">
+          <h2 id="metadata">Metadata</h2>
+          <h3 ng-repeat-start="(name, probe) in probesMetadata = vm.results.probe_results.metadata" id="{{ name | lowercase }}">{{ name }} <small>{{ probe.version }}</small></h3>
+          <h5>Responded in {{ probe.duration }} s</h5>
+
+          <div ng-switch on="probe.status" ng-repeat-end>
+            <div ng-switch-when="1">
+               <div ng-switch on="name">
+                  <pre ng-switch-when="PE Static Analyzer"><json-formatter json="probe.results" open="1"></json-formatter></pre>
+                  <pre ng-switch-when="LIEF"><json-formatter json="probe.results" open="1"></json-formatter></pre>
+                  <table class="table table-bordered" ng-switch-when="TrID File Identifier">
+                    <thead>
+                      <tr>
+                        <th>Description</th>
+                        <th>File Extension</th>
+                        <th>Ratio (in %)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr ng-repeat="(id, output) in probe.results">
+                        <td>{{ output.desc }}</td>
+                        <td>{{ output.ext }}</td>
+                        <td>{{ output.ratio }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <pre ng-switch-default>{{ probe.results }}</pre>
+               </div>
+            </div>
+
+            <div ng-switch-when="0" class="bs-callout bs-callout-warning">
+              <h4>Warning:</h4>
+              <samp>"{{ probe.results }}"</samp>
+            </div>
+
+            <div ng-switch-when="-1" class="bs-callout bs-callout-danger">
+              <h4>Error:</h4>
+              <samp>"{{ probe.error }}"</samp>
+            </div>
+          </div>
+      </div>
+
+
+      <div ng-show="probesExternal">
+          <h2 id="external">External</h2>
+          <h3 ng-repeat-start="(name, probe) in probesExternal = vm.results.probe_results.external" id="{{ name | lowercase }}">{{ name }} <small>{{ probe.version }}</small></h3>
+          <h5>Responded in {{ probe.duration }} s</h5>
+          <h5 ng-show="probe.external_url">Full result is available <a href="{{ probe.external_url }}">here <span class="glyphicon glyphicon-new-window"></span></a>.</h5>
+
+          <div ng-switch on="probe.status" ng-repeat-end>
+            <pre ng-switch-when="1">{{ probe.results }}</pre>
+
+            <div ng-switch-when="0" class="bs-callout bs-callout-warning">
+              <h4>Warning:</h4>
+              <samp>"{{ probe.results }}"</samp>
+            </div>
+
+            <div ng-switch-when="-1" class="bs-callout bs-callout-danger">
+              <h4>Error:</h4>
+              <samp>"{{ probe.error }}"</samp>
+            </div>
+          </div>
+      </div>
+
+
+      <div ng-show="probesDatabase">
+          <h2 id="database">Database</h2>
+          <h3 ng-repeat-start="(name, probe) in probesDatabase = vm.results.probe_results.database" id="{{ name | lowercase }}">{{ name }} <small>{{ probe.version }}</small></h3>
+          <h5>Responded in {{ probe.duration }} s</h5>
+
+          <div ng-switch on="probe.status" ng-repeat-end>
+            <div ng-switch-when="-1" class="bs-callout bs-callout-danger">
+              <h4>Error:</h4>
+              <samp>"{{ probe.error }}"</samp>
+            </div>
+
+            <pre ng-switch-default>{{ probe.results }}</pre>
+          </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="bs-sidebar hidden-print hidden-sm hidden-xs" role="complementary" data-offset-top="-80" bs-affix>
+      <ul class="nav" bs-scrollspy-list>
+        <li><a href="#file-informations">File informations</a></li>
+
+        <li ng-show="probesAntivirus">
+          <a href="#antivirus">Antivirus</a>
+          <ul class="nav">
+            <li ng-repeat="(name, probe) in probesAntivirus">{{ name }}</li>
+          </ul>
+        </li>
+
+        <li ng-show="probesMetadata">
+          <a href="#metadata">Metadata</a>
+          <ul class="nav">
+            <li ng-repeat="(name, probe) in probesMetadata">
+              <a href="#{{ name | lowercase }}">{{ name }}</a>
+            </li>
+          </ul>
+        </li>
+
+        <li ng-show="probesExternal">
+          <a href="#external">External</a>
+          <ul class="nav">
+            <li ng-repeat="(name, probe) in probesExternal">
+              <a href="#{{ name | lowercase }}">{{ name }}</a>
+            </li>
+          </ul>
+        </li>
+
+        <li ng-show="probesDatabase">
+          <a href="#database">Database</a>
+          <ul class="nav">
+            <li ng-repeat="(name, probe) in probesDatabase">
+              <a href="#{{ name | lowercase }}">{{ name }}</a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+      <a href="#top" class="back-to-top">Back to top</a>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,17 @@
+---
+
+- name: Install | Download tar.gz file from website
+  get_url:
+    url: "{{ pureftpd_tarball_url }}"
+    dest: "/tmp/{{ pureftpd_tarball_name }}"
+
+- name: Install | Unpack PureFTPD
+  unarchive:
+    src: "{{ pureftpd_tarball_name }}"
+    dest: "/tmp"
+
+- name: Install | Compile and install PureFTPD
+  shell: ./configure && make install-strip
+  args:
+    chdir: "/tmp/{{ pureftpd_tag_name }}"
+  become: true

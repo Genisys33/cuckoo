@@ -1,0 +1,69 @@
+---
+
+- name: Ensure that releases directory has been created
+  win_file:
+    path: "{{ probe_deployment_dir }}"
+    state: directory
+  when: irma_deployment_code_version != 'local'
+
+- name: Check if probe src archive is present
+  local_action: stat path="{{ playbook_dir }}/files/{{ irma_probe_archive }}"
+  when: irma_deployment_code_version != 'local'
+
+- name: Upload probe src archive
+  win_copy:
+    src: "files/{{ irma_probe_archive }}"
+    dest: "{{ probe_deployment_dir }}\\"
+  when: irma_deployment_code_version != 'local'
+
+- name: Get windows style path
+  set_fact:
+    probe_dest_dir: '{{ probe_deployment_dir | regex_replace("/", "\\") }}'
+    common_dest_dir: '{{ common_deployment_dir | regex_replace("/", "\\") }}'
+  when: irma_deployment_code_version != 'local'
+
+- name: Unzip probe src archive
+  win_unzip:
+    src: "{{ probe_dest_dir }}\\{{ irma_probe_archive }}"
+    dest: "{{ probe_dest_dir }}\\"
+  when: irma_deployment_code_version != 'local'
+
+- name: Install irma.common requirements in a Probe virtualenv
+  raw: "{{ item.cmd }}"
+  register: result
+  failed_when: result.rc not in {{ item.rc | default([0]) }}
+  with_items:
+    - cmd: python -m virtualenv --system-site-packages "{{ probe_deployment_dir }}/venv"
+    - cmd: "{{ probe_deployment_dir }}/venv/Scripts/python.exe -m pip install -r {{ common_deployment_dir }}/requirements.txt"
+
+- name: Install irma.common in a Probe virtualenv
+  raw: "{{ item.cmd }}"
+  register: result
+  failed_when: result.rc not in {{ item.rc | default([0]) }}
+  with_items:
+    - cmd: "{{ probe_deployment_dir }}/venv/Scripts/python.exe -m pip install {{ common_dest_dir }}"
+
+- name: Install requirements in a virtualenv
+  raw: "{{ item.cmd }}"
+  register: result
+  failed_when: result.rc not in {{ item.rc | default([0]) }}
+  with_items:
+    - cmd: "{{ probe_deployment_dir }}/venv/Scripts/python.exe -m pip install -r {{ probe_deployment_dir }}/requirements.txt {{ pip_extra_args | default('') }}"
+
+- name: Configure config/probe.ini file
+  win_ini_file:
+    dest: "{{ probe_deployment_dir }}/config/probe.ini"
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items: "{{ probe_deployment_configs }}"
+
+- name: Create symlink release -> current
+  raw: cmd /C '"{{ item.cmd }}"'
+  register: result
+  failed_when: result.rc not in {{ item.rc | default([0]) }}
+  with_items:
+    - cmd: rmdir /q /s "{{ probe_install_dir }}"
+      rc: [0, 1, 2]
+    - cmd: mklink /d "{{ probe_install_dir }}" "{{ probe_deployment_dir }}"
+      rc: [0, 2]

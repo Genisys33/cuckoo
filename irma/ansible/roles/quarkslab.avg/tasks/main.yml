@@ -1,0 +1,9 @@
+---
+
+- name: AVG | Check version
+  command: avgscan --version
+  ignore_errors: yes
+  register: avg_present
+
+- include: install.yml
+  when: avg_present is failed

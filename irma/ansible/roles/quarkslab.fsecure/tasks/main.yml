@@ -1,0 +1,10 @@
+---
+
+
+- name: F-Secure | Check version
+  command: fsav --version
+  ignore_errors: yes
+  register: fsecure_present
+
+- include: install.yml
+  when: fsecure_present is failed

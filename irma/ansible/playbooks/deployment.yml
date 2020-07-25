@@ -1,0 +1,34 @@
+---
+
+- hosts: all
+  tasks:
+    - import_tasks: check.yml
+
+- import_playbook: packaging.yml
+  when: irma_deployment_code_version != 'local' and irma_code_archive_generation == True
+
+- name: Common deployment
+  hosts: frontend:brain:probe
+  remote_user: "{{ common_user }}"
+  roles:
+    - { role: quarkslab.irma_deployment_common, tags: deployment_common }
+
+- name: Frontend deployment
+  hosts: frontend
+  remote_user: "{{ frontend_user }}"
+  roles:
+    - { role: quarkslab.irma_deployment_frontend, tags: deployment_frontend }
+
+- name: Brain deployment
+  hosts: brain
+  remote_user: "{{ brain_user }}"
+  roles:
+    - { role: quarkslab.irma_deployment_brain, tags: deployment_brain }
+
+- name: Probe deployment
+  hosts: probe
+  remote_user: "{{ probe_user }}"
+  roles:
+    - { role: quarkslab.irma_deployment_probe, tags: deployment_probe }
+
+# vim: sw=2

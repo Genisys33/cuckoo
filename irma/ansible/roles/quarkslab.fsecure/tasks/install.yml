@@ -1,0 +1,46 @@
+---
+
+- name: F-Secure | Install dependencies
+  apt:
+    name: ['lib32stdc++6', 'rpm']
+    state: present
+  become: yes
+
+- name: F-Secure | Create temporary work dir
+  file:
+    path: "{{ fsecure_temp_dir }}/"
+    state: directory
+
+- name: F-Secure | Download Package
+  get_url:
+    url: "{{ fsecure_url }}"
+    dest: "{{ fsecure_temp_dir }}/fsls.tar.gz"
+
+- name: F-Secure | Extract installer
+  unarchive:
+    src: "{{ fsecure_temp_dir }}/fsls.tar.gz"
+    dest: "{{ fsecure_temp_dir }}"
+    remote_src: yes
+
+- name: F-Secure | Run installer in trial mode
+  shell: echo | sh "{{ fsecure_temp_dir }}/fsls-{{ fsecure_version }}-rtm/fsls-{{ fsecure_version }}" --auto standalone lang=en noremotewui nolocallogin
+  become: true
+  when: fsecure_license_key is not defined
+
+- name: F-Secure | Run installer in licensed mode
+  shell: echo | sh "{{ fsecure_temp_dir }}/fsls-{{ fsecure_version }}-rtm/fsls-{{ fsecure_version }}" --auto psb fspsbs={{ fsecure_psb_server }} lang=en keycode={{ fsecure_license_key }} noremotewui nolocallogin
+  become: true
+  when: fsecure_license_key is defined
+
+- name: F-Secure | Disable real-time virus scan
+  shell: /opt/f-secure/fsma/bin/chtest s 45.1.40.10 0 && /opt/f-secure/fsma/bin/chtest s 45.1.70.10 0
+  become: true
+
+- name: F-Secure | Disable Web Interface and Firewall with fschooser
+  shell: printf "f\nw\n\n" | /opt/f-secure/fsav/sbin/fschooser
+  become: true
+
+- name: F-Secure | Remove temporary work dir
+  file:
+    path: "{{ fsecure_temp_dir }}/"
+    state: absent

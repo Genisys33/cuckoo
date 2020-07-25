@@ -1,0 +1,32 @@
+
+# We still need this as the apt module doesn't react to the 'dpkg_options:
+# "--add-architecture i386'
+- name: TrID | Adding i386 repositories
+  command: dpkg --add-architecture i386
+  become: yes
+
+- name: TrID | Install dependencies
+  apt:
+    name: ['libc6-i386', 'libstdc++6', 'libncurses5:i386', 'unzip']
+    state: "latest"
+    update_cache: yes
+    cache_valid_time: 0         # force refresh for i386 arch
+  become: yes
+
+- name: TrID | Creating temp directory
+  file: path="{{ trid_temp_dir }}" state="directory"
+
+- name: TrID | Download Package
+  get_url: url="{{ trid_zip_url }}" dest="{{ trid_temp_dir }}/trid_linux.zip"
+
+- name: TrID | Creating Install Directory
+  file: path="{{ trid_install_dir }}" state="directory"
+  become: yes
+
+- name: TrID | Extracting Package
+  unarchive: src="{{ trid_temp_dir }}/trid_linux.zip" dest="{{ trid_install_dir}}" copy=no
+  become: yes
+
+- name: TrID | Ensure binary is executable
+  file: path="{{ trid_install_dir }}/trid" mode=0755
+  become: yes

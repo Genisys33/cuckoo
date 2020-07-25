@@ -1,0 +1,12 @@
+---
+- name: Unarchiver | Installing dependencies with pip
+  pip:
+    name: ['patool', 'pyunpack']
+    state: "latest"
+    executable: pip3
+    extra_args: "{{ pip_extra_args | default('') }}"
+
+- name: Unarchiver | Install format handlers
+  apt:
+    name: ['unzip', 'p7zip', 'unrar-free', 'unace']
+    state: present

@@ -1,0 +1,44 @@
+---
+
+- name: BitDefender | Install requirements
+  become: yes
+  package:
+    name: psmisc
+    state: present
+
+- name: BitDefender | Download Package
+  get_url:
+    url: "{{ bitdefender_url }}"
+    dest: /tmp/BitDefender-Antivirus-Scanner-linux.run
+
+# NOTE: We patch the installed to have an ansible friendly installer
+- name: BitDefender | Patching Installer CRC
+  lineinfile:
+    path: /tmp/BitDefender-Antivirus-Scanner-linux.run
+    regexp: '^CRCsum=(.*)$'
+    line: 'CRCsum="0000000000"'
+
+- name: BitDefender | Patching Installer MD5
+  lineinfile:
+    path: /tmp/BitDefender-Antivirus-Scanner-linux.run
+    regexp: '^MD5=(.*)$'
+    line: 'MD5="00000000000000000000000000000000"'
+
+- name: BitDefender | Replace more by cat for 'more LICENSE'
+  lineinfile:
+    path: /tmp/BitDefender-Antivirus-Scanner-linux.run
+    regexp: '^more LICENSE$'
+    line: 'cat  LICENSE'
+
+- name: BitDefender | Run installer, do not install GUI
+  shell: (echo 'accept'; echo 'n') | sh /tmp/BitDefender-Antivirus-Scanner-linux.run
+  become: yes
+
+- name: BitDefender | Change license key
+  lineinfile:
+    path: /opt/BitDefender-scanner/etc/bdscan.conf
+    regexp: '^Key =(.*)$'
+    line: 'Key = {{ bitdefender_scanner_key }}'
+    backup: yes
+  when: bitdefender_scanner_key is defined
+  become: yes

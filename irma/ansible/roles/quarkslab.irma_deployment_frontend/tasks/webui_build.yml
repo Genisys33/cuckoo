@@ -1,0 +1,6 @@
+---
+
+- name: Generate Web Frontend
+  command: ./build.sh {{ frontend_ui_build_args|join(" ") }}
+  args:
+    chdir: "{{ frontend_deployment_dir }}/web"

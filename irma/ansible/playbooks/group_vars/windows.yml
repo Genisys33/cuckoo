@@ -1,0 +1,30 @@
+---
+
+## Override probe global
+default_user: vagrant
+default_group: vagrant
+
+# NOTE: As windows does not support key based authentication, you need to
+# set up your password globally in this configuration file or per host using
+# the hosts_vars
+ansible_ssh_pass: vagrant
+ansible_ssh_port: 5985
+ansible_connection: winrm
+
+# Default winrm timeout are set by pywinrm Protocol class
+# DEFAULT_OPERATION_TIMEOUT_SEC = 20
+# DEFAULT_READ_TIMEOUT_SEC = 30
+ansible_winrm_operation_timeout_sec: 600
+ansible_winrm_read_timeout_sec: 900
+
+
+win_packages:
+  - name: python-3.5.3.amd64.exe
+    url: https://www.python.org/ftp/python/3.5.3/python-3.5.3-amd64.exe
+    install_args: "'/quiet', 'InstallAllUsers=1', 'PrependPath=1'"
+    type: exe
+  # LDTP requires python2
+  - name: python-2.7.12.amd64.msi
+    url: https://www.python.org/ftp/python/2.7.12/python-2.7.12.amd64.msi
+    install_args: /qn /norestart
+    type: msi

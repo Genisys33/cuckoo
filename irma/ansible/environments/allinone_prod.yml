@@ -1,0 +1,31 @@
+---
+
+servers:
+  - name: brain.irma
+    ip: 172.16.1.30
+    ansible_groups: [sql-server, frontend, brain, unarchiver, fsecure, comodo, clamav, escan, avg, peid, trid, lief]
+    box: quarkslab/debian-9.0.0-amd64
+    cpus: 2
+    memory: 2048
+    share_code: false
+##   - name: probe-win.irma
+##     ip: 172.16.1.31
+##     ansible_groups: [mcafee-win]
+##     box: eval-win10-enterprise
+##     cpus: 2
+##     memory: 2048
+##     windows: true
+
+libvirt_config:
+  driver: kvm
+  # connect_via_ssh: true
+  # host:
+  # username:
+  # storage_pool_name:
+  # id_ssh_key_file:
+
+ansible_vars:
+  irma_environment: production
+  vagrant: true
+  irma_release: HEAD
+  irma_code_archive_generation: True

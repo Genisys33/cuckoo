@@ -1,0 +1,40 @@
+---
+
+- name: VBA32 | Adding i386 repositories
+  command: dpkg --add-architecture i386
+  become: yes
+
+- name: VBA32 | Install dependencies
+  apt:
+    name: ['libc6:i386', 'libstdc++6']
+    state: present
+    update_cache: yes
+    cache_valid_time: 0         # force refresh for i386 arch
+  become: yes
+
+- name: VBA32 | Create temporary work dir
+  file:
+    path: "{{ virusblokada_temp_dir }}/"
+    state: directory
+
+- name: VBA32 | Download Package
+  get_url:
+    url: "{{ virusblokada_tgz_url }}"
+    dest: "{{ virusblokada_temp_dir }}/vbacl-linux.tar.gz"
+
+- name: VBA32 | Extract Installer
+  unarchive:
+    src: "{{ virusblokada_temp_dir }}/vbacl-linux.tar.gz"
+    dest: "{{ virusblokada_temp_dir }}/"
+    remote_src: yes
+
+- name: VBA32 | Launch Installer
+  command: sh "{{ virusblokada_temp_dir }}/setup.sh" install
+  args:
+    chdir: "{{ virusblokada_temp_dir }}/"
+  become: yes
+
+- name: VBA32 | Remove temporary work dir
+  file:
+    path: "{{ virusblokada_temp_dir}}/"
+    state: absent

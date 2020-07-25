@@ -1,0 +1,28 @@
+---
+
+- name: Zoner | Create temporary work dir
+  file:
+    path: "{{ zoner_temp_dir }}/"
+    state: directory
+
+- name: Zoner | Download Package
+  get_url:
+    url: "{{ zoner_url }}"
+    dest: "{{ zoner_temp_dir }}/zav.deb"
+
+- name: Zoner | Run installer
+  apt:
+    deb: "{{ zoner_temp_dir }}/zav.deb"
+  become: yes
+
+- name: Zoner | Remove temporary work dir
+  file:
+    path: "{{ zoner_temp_dir }}/"
+    state: absent
+
+- name: Zoner | Enable service
+  service:
+    name: zavd
+    enabled: yes
+    state: started
+  become: yes

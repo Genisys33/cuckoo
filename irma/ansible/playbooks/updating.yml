@@ -1,0 +1,4 @@
+---
+
+- import_playbook: updating_auto.yml
+  when: av_update_mode == "automatic"

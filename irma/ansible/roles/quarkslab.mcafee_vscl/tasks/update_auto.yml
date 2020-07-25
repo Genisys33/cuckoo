@@ -1,0 +1,48 @@
+---
+
+- name: McAfee VSCL | Create temporary work dir
+  file:
+    path: "{{ mcafee_temp_dir }}/"
+    state: directory
+
+- name: McAfee VSCL | Install dependencies for McAfee installation
+  apt:
+    name: ['unzip', 'curl']
+    state: present
+
+- name: McAfee VSCL | Download Update
+  command: wget -Nc -r -nd -l1 -A "avvepo????dat.zip" http://download.nai.com/products/DatFiles/4.x/nai/
+  args:
+    chdir: "{{ mcafee_temp_dir }}"
+    warn: no # don't warn us about get_url
+
+- shell: "ls {{ mcafee_temp_dir }}/avvepo*"
+  register: update_pkg
+
+- unarchive:
+    src: "{{ item }}"
+    dest: "{{ mcafee_temp_dir }}"
+    remote_src: yes
+  with_items: "{{update_pkg.stdout_lines}}"
+
+- file:
+    path: "{{ item }}"
+    state: absent
+  with_items: "{{update_pkg.stdout_lines}}"
+
+- shell: "ls {{ mcafee_temp_dir }}/avvdat-*"
+  register: update
+
+- unarchive:
+    src: "{{ item }}"
+    dest: /usr/local/uvscan
+    remote_src: yes
+  with_items: "{{update.stdout_lines}}"
+
+- name: McAfee VSCL | Decompress signatures files
+  shell: "/usr/local/uvscan/uvscan --decompress"
+
+- name: McAfee VSCL | Remove temporary work dir
+  file:
+    path: "{{ mcafee_temp_dir}}/"
+    state: absent

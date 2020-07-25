@@ -1,0 +1,77 @@
+---
+
+- set_fact:
+    brain_deployment_dir: "{{ brain_project_dir }}/releases/{{ irma_deployment_release_name }}"
+
+- name: Ensure that releases directory has been created
+  file:
+    path: "{{ brain_deployment_dir }}"
+    state: directory
+
+- name: Check if brain src archive is present
+  local_action: stat path="{{ playbook_dir }}/files/{{ irma_brain_archive }}"
+  when: irma_deployment_code_version != 'local'
+
+- name: Deploy brain src archive
+  unarchive:
+    src: "files/{{ irma_brain_archive }}"
+    dest: "{{ brain_deployment_dir }}"
+  when: irma_deployment_code_version != 'local'
+
+- name: Install irma.common requirements in a Brain virtualenv
+  pip:
+    requirements: "{{ common_install_dir }}/requirements.txt"
+    virtualenv: "{{ brain_deployment_dir }}/venv"
+    extra_args: "{{ pip_extra_args | default('') }} --upgrade"
+
+- name: Install irma.common in a Brain virtualenv
+  pip:
+    name: "{{ common_install_dir }}/"
+    virtualenv: "{{ brain_deployment_dir }}/venv"
+    extra_args: "{{ pip_extra_args | default('') }} --upgrade"
+
+- name: Install requirements in a virtualenv
+  pip:
+    requirements: "{{ brain_deployment_dir }}/requirements.txt"
+    virtualenv: "{{ brain_deployment_dir }}/venv"
+    extra_args: "{{ pip_extra_args | default('') }}"
+
+- name: Generate database
+  command: "{{ brain_deployment_dir }}/venv/bin/python -m scripts.create_user user {{ rabbitmq_configuration.frontend.vhost }} {{ ftpd_configuration.frontend.username }}"
+  args:
+    chdir: "{{ brain_deployment_dir }}"
+  become_user: "{{ irma_user }}"
+  become: yes
+
+- name: Import rabbitmq crypto objects
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ irma_user }}"
+    group: "{{ irma_group }}"
+    mode: 0640
+  with_items:
+    - src: "{{ rabbitmq_brain_key }}"
+      dest: "{{ dst_pki_folder }}/brain-client.key"
+    - src: "{{ rabbitmq_brain_cert }}"
+      dest: "{{ dst_pki_folder }}/brain-client.crt"
+    - src: "{{ rabbitmq_cacert }}"
+      dest: "{{ dst_pki_folder }}/rabbitmq-ca.crt"
+  when: rabbitmq_ssl
+  become: yes
+
+- name: Configure config/brain.ini file
+  ini_file:
+    dest: "{{ brain_deployment_dir }}/config/brain.ini"
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items: "{{ brain_deployment_configs }}"
+
+- name: Create symlink release -> current
+  file:
+    src: "{{ brain_deployment_dir }}"
+    dest: "{{ brain_install_dir }}"
+    state: link
+
+- include_tasks: restart.yml

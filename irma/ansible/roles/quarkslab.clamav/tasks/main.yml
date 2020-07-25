@@ -1,0 +1,31 @@
+---
+
+- name: ClamAV | Preconfigure Freshclam to manual update
+  debconf:
+     name: clamav-freshclam
+     question: 'clamav-freshclam/autoupdate_freshclam'
+     value: 'manual'
+     vtype: 'string'
+
+- lineinfile:
+    path: /etc/hosts
+    line: '127.0.0.1 database.clamav.net current.cvd.clamav.net db.local.clamav.net'
+    owner: root
+    group: root
+    state: present
+    mode: 0644
+
+- name: ClamAV | Install package
+  apt:
+    name: ['clamav', 'clamav-base', 'clamav-freshclam', 'clamav-daemon',
+           'clamav-unofficial-sigs']
+    state: latest
+  register: clamav_install
+
+- lineinfile:
+    path: /etc/hosts
+    line: '127.0.0.1 database.clamav.net current.cvd.clamav.net db.local.clamav.net'
+    owner: root
+    group: root
+    state: absent
+    mode: 0644

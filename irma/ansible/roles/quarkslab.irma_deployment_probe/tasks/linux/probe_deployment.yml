@@ -1,0 +1,69 @@
+---
+
+- name: Import rabbitmq crypto objects
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ irma_user }}"
+    group: "{{ irma_group }}"
+    mode: 0640
+  with_items:
+    - src: "{{ rabbitmq_probe_key }}"
+      dest: "{{ dst_pki_folder }}/probe-client.key"
+    - src: "{{ rabbitmq_probe_cert }}"
+      dest: "{{ dst_pki_folder }}/probe-client.crt"
+    - src: "{{ rabbitmq_cacert }}"
+      dest: "{{ dst_pki_folder }}/rabbitmq-ca.crt"
+  when: rabbitmq_ssl
+  become: yes
+
+- name: Ensure that releases directory has been created
+  file:
+    path: "{{ probe_deployment_dir }}"
+    state: directory
+  when: irma_deployment_code_version != 'local'
+
+- name: Check if probe src archive is present
+  local_action: stat path="{{ playbook_dir }}/files/{{ irma_probe_archive }}"
+  when: irma_deployment_code_version != 'local'
+
+- name: Upload probe src archive
+  unarchive:
+    src: "files/{{ irma_probe_archive }}"
+    dest: "{{ probe_deployment_dir }}"
+  when: irma_deployment_code_version != 'local'
+
+- name: Install irma.common requirements in a Probe virtualenv
+  pip:
+    requirements: "{{ common_install_dir }}/requirements.txt"
+    virtualenv: "{{ probe_deployment_dir }}/venv"
+    virtualenv_site_packages: "yes"
+    extra_args: "{{ pip_extra_args | default('') }} --upgrade"
+
+- name: Install irma.common in a Probe virtualenv
+  pip:
+    name: "{{ common_install_dir }}/"
+    virtualenv: "{{ probe_deployment_dir }}/venv"
+    virtualenv_site_packages: "yes"
+    extra_args: "{{ pip_extra_args | default('') }} --upgrade"
+
+- name: Install requirements in a virtualenv
+  pip:
+    requirements: "{{ probe_deployment_dir }}/requirements.txt"
+    virtualenv: "{{ probe_deployment_dir }}/venv"
+    virtualenv_site_packages: "yes"
+    extra_args: "{{ pip_extra_args | default('') }}"
+
+- name: Configure config/probe.ini file
+  ini_file:
+    dest: "{{ probe_deployment_dir }}/config/probe.ini"
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items: "{{ probe_deployment_configs }}"
+
+- name: Create symlink release -> current
+  file:
+    src: "{{ probe_deployment_dir }}"
+    dest: "{{ probe_install_dir }}"
+    state: link

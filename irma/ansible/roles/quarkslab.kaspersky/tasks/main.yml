@@ -1,0 +1,17 @@
+---
+
+- name: Kaspersky | Check installed version
+  command: "{{kaspersky_bin}} -S --app-info"
+  ignore_errors: yes
+  register: kaspersky_present
+
+- name: Kaspersky | Installation already done
+  debug:
+    msg: "Kaspersky is already installed. Skipping the installation part..."
+  when: kaspersky_present is success
+
+- include: install.yml
+  when: kaspersky_present is failed
+
+- include: configuration.yml
+  when: kaspersky_present is failed

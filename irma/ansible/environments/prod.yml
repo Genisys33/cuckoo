@@ -1,0 +1,41 @@
+---
+
+servers:
+  - name: frontend.irma
+    ip: 172.16.1.30
+    ansible_groups: [frontend, sql-server]
+    box: quarkslab/debian-9.0.0-amd64
+    cpus: 2
+    memory: 2048
+  - name: brain.irma
+    ip: 172.16.1.31
+    ansible_groups: [brain]
+    box: quarkslab/debian-9.0.0-amd64
+    cpus: 2
+    memory: 2048
+  - name: avs-linux.irma
+    ip: 172.16.1.32
+    ansible_groups: [avast, avg, bitdefender, clamav, comodo, escan]
+    box: quarkslab/debian-9.0.0-amd64
+    cpus: 2
+    memory: 2048
+  - name: mcafee-win.irma
+    ip: 172.16.1.33
+    ansible_groups: [mcafee-win]
+    box: eval-win10x64-enterprise
+    cpus: 2
+    memory: 2048
+    windows: true
+
+libvirt_config:
+  driver: kvm
+  # connect_via_ssh: true
+  # host:
+  # username:
+  # storage_pool_name:
+  # id_ssh_key_file:
+
+ansible_vars:
+  irma_environment: production
+  vagrant: true
+  irma_code_archive_generation: False
