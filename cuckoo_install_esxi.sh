@@ -49,19 +49,35 @@ CUCKOO_GUEST_IP=$(getValue CUCKOO_GUEST_IP)
 CUCKOO_GUEST_SNAPSHOT=$(getValue CUCKOO_GUEST_SNAPSHOT)
 CUCKOO_RESULTSERVER_IP=$(getValue CUCKOO_RESULTSERVER_IP)
 
+# On commence par vérifier l'utilisateur courant, si c'est root alors pas besoin d'utiliser la commande sudo pour les commandes spécifiques
+PREFIX=""
 
-sudo apt update && sudo apt install -y \
+if [ $USER != "root" ];then
+	# On vérifie si sudo est installé
+	which sudo > /dev/null
+	if [ $? -ne 0 ];then
+		echo "sudo does not seem to be installed, to execute this script as non-root user you must install sudo, or run it as 'root'..."
+		exit 1
+	fi
+
+	# On part du principe que si sudo est installé et que l'on est connecté en tant que simple utilisateur, le fichier /etc/sudoers a déjà été configuré pour que cet
+	# utilisateur puisse utiliser sudo sans password (type box vagrant)
+	PREFIX="sudo"
+fi
+
+
+$PREFIX apt update && $PREFIX apt install -y \
 	gnupg2 \
-	sudo \
+	$PREFIX \
 	unzip \
 	wget
 
 # Ajout du repository mongodb
-wget -qO - https://www.mongodb.org/static/pgp/server-4.2.asc | sudo apt-key add -
-echo "deb http://repo.mongodb.org/apt/debian buster/mongodb-org/4.2 main" | sudo tee /etc/apt/sources.list.d/mongodb.list
+wget -qO - https://www.mongodb.org/static/pgp/server-4.2.asc | $PREFIX apt-key add -
+echo "deb http://repo.mongodb.org/apt/debian buster/mongodb-org/4.2 main" | $PREFIX tee /etc/apt/sources.list.d/mongodb.list
 
 # Installation des paquets nécessaires
-sudo apt update && sudo apt install -y \
+$PREFIX apt update && $PREFIX apt install -y \
     apparmor-utils \
     automake \
     bison \
@@ -93,9 +109,9 @@ sudo apt update && sudo apt install -y \
     zlib1g-dev
 
 
-sudo aa-disable /usr/sbin/tcpdump
-sudo setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump
-sudo getcap /usr/sbin/tcpdump
+$PREFIX aa-disable /usr/sbin/tcpdump
+$PREFIX setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump
+$PREFIX getcap /usr/sbin/tcpdump
 
 # Installation de YARA
 cd /tmp/
@@ -105,19 +121,19 @@ cd yara-3.11.0
 ./bootstrap.sh
 ./configure --enable-cuckoo --enable-magic --enable-dotnet
 make
-sudo make install
+$PREFIX make install
 echo "========="
 make check
 cd $OLDPWD
  
-sudo pip install \
+$PREFIX pip install \
     pip \
     pydeep \
     "weasyprint==0.39" \
     yara-python
 
-sudo systemctl enable mongod
-sudo systemctl start mongod
+$PREFIX systemctl enable mongod
+$PREFIX systemctl start mongod
 
 
 # ===================
@@ -125,11 +141,11 @@ sudo systemctl start mongod
 # ===================
 
 cd /opt/
-sudo virtualenv cuckoo
+$PREFIX virtualenv cuckoo
 . cuckoo/bin/activate
-sudo pip install -U pip setuptools
-sudo pip install -U cuckoo
-sudo pip install -U distorm3
+$PREFIX pip install -U pip setuptools
+$PREFIX pip install -U cuckoo
+$PREFIX pip install -U distorm3
 echo "================== debug 1 ============"
 echo "----> cuckoo -d"
 cuckoo -d
@@ -137,33 +153,33 @@ cuckoo -d
 echo "----> cuckoo community"
 cuckoo community
 
-sudo pip install git+https://github.com/volatilityfoundation/volatility.git
+$PREFIX pip install git+https://github.com/volatilityfoundation/volatility.git
 
 # Création des scripts de démarrage
 
 SYSTEMD="/lib/systemd/system"
 
-sudo cp $INIT_PATH/systemd/cuckoo.service $SYSTEMD
-sudo cp $INIT_PATH/systemd/cuckooweb.service $SYSTEMD
+$PREFIX cp $INIT_PATH/systemd/cuckoo.service $SYSTEMD
+$PREFIX cp $INIT_PATH/systemd/cuckooweb.service $SYSTEMD
 
-sudo perl -p -i -e "s/(?<=^User=).+/ $USER/g" $SYSTEMD/cuckoo.service
-sudo perl -p -i -e "s/(?<=^Group=).+/ $USER/g" $SYSTEMD/cuckoo.service
+$PREFIX perl -p -i -e "s/(?<=^User=).+/ $USER/g" $SYSTEMD/cuckoo.service
+$PREFIX perl -p -i -e "s/(?<=^Group=).+/ $USER/g" $SYSTEMD/cuckoo.service
 
-sudo perl -p -i -e "s/(?<=^User=).+/ $USER/g" $SYSTEMD/cuckooweb.service
-sudo perl -p -i -e "s/(?<=^Group=).+/ $USER/g" $SYSTEMD/cuckooweb.service
+$PREFIX perl -p -i -e "s/(?<=^User=).+/ $USER/g" $SYSTEMD/cuckooweb.service
+$PREFIX perl -p -i -e "s/(?<=^Group=).+/ $USER/g" $SYSTEMD/cuckooweb.service
 
-sudo cp $INIT_PATH/bin/cuckoo.sh /opt/
-sudo cp $INIT_PATH/bin/cuckooweb.sh /opt/
+$PREFIX cp $INIT_PATH/bin/cuckoo.sh /opt/
+$PREFIX cp $INIT_PATH/bin/cuckooweb.sh /opt/
 
-sudo cp $INIT_PATH/conf/* ~/.cuckoo/conf
+$PREFIX cp $INIT_PATH/conf/* ~/.cuckoo/conf
 
 # Exécution de cuckoo et cuckooweb au démarrage du système
-sudo systemctl daemon-reload
-sudo systemctl enable cuckoo
-sudo systemctl enable cuckooweb
+$PREFIX systemctl daemon-reload
+$PREFIX systemctl enable cuckoo
+$PREFIX systemctl enable cuckooweb
 
 param
 
 # Lancement des services
-sudo systemctl start cuckoo
-sudo systemctl start cuckooweb
+$PREFIX systemctl start cuckoo
+$PREFIX systemctl start cuckooweb
