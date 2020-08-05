@@ -217,7 +217,7 @@ $PREFIX systemctl enable cuckooweb
 
 param
 
-cat /home/cuckoo/.cuckoo/conf/reporting.conf << EOF
+cat > /home/cuckoo/.cuckoo/conf/reporting.conf << EOF
 # Enable or disable the available reporting modules [on/off].
 # If you add a custom reporting module to your Cuckoo setup, you have to add
 # a dedicated entry in this file, or it won't be executed.
