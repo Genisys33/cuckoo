@@ -217,7 +217,7 @@ $PREFIX systemctl enable cuckooweb
 
 param
 
-cat > /home/cuckoo/.cuckoo/conf/reporting.conf << EOF
+sudo -u cuckoo -- sh -c "cat > /home/cuckoo/.cuckoo/conf/reporting.conf << EOF
 # Enable or disable the available reporting modules [on/off].
 # If you add a custom reporting module to your Cuckoo setup, you have to add
 # a dedicated entry in this file, or it won't be executed.
@@ -285,7 +285,7 @@ timeout = 300
 # through the behavioral summary.
 calls = no
 # Index of this Cuckoo instance. If multiple Cuckoo instances connect to the
-# same ElasticSearch host then this index (in Moloch called "instance") should
+# same ElasticSearch host then this index (in Moloch called \"instance\") should
 # be unique for each Cuckoo instance.
 index = cuckoo
 
@@ -348,7 +348,7 @@ show_virustotal = no
 # Show matched cuckoo signatures.
 show_signatures = no
 
-# Show collected URL-s by signature "network_http".
+# Show collected URL-s by signature \"network_http\".
 show_urls = no
 
 # Hide filename and create hash of it
@@ -356,7 +356,7 @@ hash_filename = no
 # Hide URL and create hash of it
 hash_url = no
 
-EOF
+EOF"
 
 # Lancement des services
 $PREFIX systemctl start cuckoo
