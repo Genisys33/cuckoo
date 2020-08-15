@@ -98,6 +98,7 @@ $PREFIX apt update && $PREFIX apt install -y \
     libssl-dev \
     libtool \
     libvirt0 \
+    libvirt-dev \
     make \
     mongodb-org \
     python \
@@ -172,6 +173,9 @@ virtualenv cuckoo
 pip install -U pip setuptools
 pip install -U cuckoo
 pip install -U distorm3
+pip install -U libvirt-python==5.0
+pip install -U yara-python
+pip install -U weasyprint==0.39
 echo "================== debug 1 ============"
 echo "----> cuckoo -d"
 cuckoo -d
