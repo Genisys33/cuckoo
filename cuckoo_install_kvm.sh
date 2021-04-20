@@ -228,11 +228,11 @@ $PREFIX chown cuckoo: /opt/cuckooweb.sh
 # Exécution de cuckoo et cuckooweb au démarrage du système et lancement
 $PREFIX systemctl daemon-reload
 $PREFIX systemctl enable cuckoo --now 
-$PREFIX systemctl enable cuckooweb --now 
+$PREFIX systemctl enable cuckooweb 
 
-echo "Tempo du démarage du service"
+echo "=====  Temporisation démarage du server, et création de fichier  ====="
 sleep 30
-echo "Fin tempo"
+echo "=====  Fin  ====="
 
 $PREFIX cp -f $INIT_PATH/conf/* /home/cuckoo/.cuckoo/conf/
 $PREFIX chown -R cuckoo:cuckoo /home/cuckoo/.cuckoo
