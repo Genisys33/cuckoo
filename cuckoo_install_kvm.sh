@@ -225,7 +225,9 @@ $PREFIX cp $INIT_PATH/bin/cuckooweb.sh /opt/
 $PREFIX chown cuckoo: /opt/cuckoo.sh
 $PREFIX chown cuckoo: /opt/cuckooweb.sh
 
+$PREFIX mkdir -p /home/cuckoo/.cuckoo/conf/
 $PREFIX cp $INIT_PATH/conf/* /home/cuckoo/.cuckoo/conf/
+$PREFIX chown -R cuckoo:cuckoo /home/cuckoo/.cuckoo
 
 # Exécution de cuckoo et cuckooweb au démarrage du système
 $PREFIX systemctl daemon-reload
