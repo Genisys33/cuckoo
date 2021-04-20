@@ -230,6 +230,10 @@ $PREFIX systemctl daemon-reload
 $PREFIX systemctl enable cuckoo --now 
 $PREFIX systemctl enable cuckooweb --now 
 
+echo "Tempo du démarage du service"
+sleep 30
+echo "Fin tempo"
+
 $PREFIX cp -f $INIT_PATH/conf/* /home/cuckoo/.cuckoo/conf/
 $PREFIX chown -R cuckoo:cuckoo /home/cuckoo/.cuckoo
 
