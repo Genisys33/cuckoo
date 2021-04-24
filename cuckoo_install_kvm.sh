@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash"
 
 function getValue(){
         cat $ENVFILE | grep "^$1=" | cut -d "=" -f 2 | head -n 1 | tr -d "\n"
@@ -16,7 +16,7 @@ function param(){
         $PREFIX perl -p -i -e "s/(?<=^ip =).+/ $CUCKOO_RESULTSERVER_IP/g" $CONF_CUCKOO
         $PREFIX perl -p -i -e "s/(?<=ignore_vulnerabilities =).+/ yes/g" $CONF_CUCKOO
         $PREFIX perl -p -i -e "s/(?<=machinery =).+/ $CUCKOO_HYPERVISOR/g" $CONF_CUCKOO
-        $PREFIX perl -p -i -e "s/(?<=connection =).+/ $CUCKOO_HYPERVISOR/g" $CONF_CUCKOO
+        $PREFIX perl -p -i -e "s/(?<=connection =).+/ $CUCKOO_DATABASE/g" $CONF_CUCKOO
 		
 		$PREFIX chown cuckoo: $CONF_CUCKOO $CONF_HYPERVISOR
 }
@@ -34,7 +34,7 @@ CUCKOO_GUEST_VMNAME=cuckoo1
 CUCKOO_GUEST_IP=192.168.56.101
 CUCKOO_GUEST_SNAPSHOT=CUCKOO_READY
 CUCKOO_RESULTSERVER_IP=0.0.0.0
-CUCKOO_DATABASE=postgresql://cuckoo:Analyste@127.0.0.1:5432/cuckoo
+CUCKOO_DATABASE=\"postgresql://cuckoo:Analyste@127.0.0.1:5432/cuckoo\"
 EOF
         echo "$ENVFILE has been created, fill it properly and re-run installation."
         exit 1
