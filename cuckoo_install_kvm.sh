@@ -1,4 +1,4 @@
-#!/bin/bash"
+#!/bin/bash
 
 function getValue(){
         cat $ENVFILE | grep "^$1=" | cut -d "=" -f 2 | head -n 1 | tr -d "\n"
