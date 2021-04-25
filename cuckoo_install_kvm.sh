@@ -46,6 +46,7 @@ CUCKOO_GUEST_VMNAME=$(getValue CUCKOO_GUEST_VMNAME)
 CUCKOO_GUEST_IP=$(getValue CUCKOO_GUEST_IP)
 CUCKOO_GUEST_SNAPSHOT=$(getValue CUCKOO_GUEST_SNAPSHOT)
 CUCKOO_RESULTSERVER_IP=$(getValue CUCKOO_RESULTSERVER_IP)
+CUCKOO_DATABASE=$(getValue CUCKOO_DATABASE)
 
 # On commence par vérifier l'utilisateur courant, si c'est root alors pas besoin d'utiliser la commande sudo pour les commandes spécifiques
 PREFIX=""
