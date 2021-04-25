@@ -112,7 +112,6 @@ $PREFIX apt update && $PREFIX apt install -y \
     python-ssdeep \
     python-virtualenv \
     qemu-kvm \
-    iptables-persistent\
     ssdeep \
     swig \
     tcpdump \
