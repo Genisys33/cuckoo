@@ -34,7 +34,7 @@ CUCKOO_GUEST_VMNAME=win10
 CUCKOO_GUEST_IP=192.168.56.101
 CUCKOO_GUEST_SNAPSHOT=CUCKOO_READY
 CUCKOO_RESULTSERVER_IP=0.0.0.0
-CUCKOO_DATABASE=postgresql://cuckoo:Analyste@127.0.0.1:5432/cuckoo
+CUCKOO_DATABASE='postgresql://cuckoo:Analyste@127.0.0.1:5432/cuckoo'
 EOF
         echo "$ENVFILE has been created, fill it properly and re-run installation."
         exit 1
