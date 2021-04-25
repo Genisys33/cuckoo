@@ -112,6 +112,7 @@ $PREFIX apt update && $PREFIX apt install -y \
     python-ssdeep \
     python-virtualenv \
     qemu-kvm \
+    iptables-persistent\
     ssdeep \
     swig \
     tcpdump \
@@ -209,6 +210,20 @@ psql << EOF
         \q
 EOF
 "
+
+# Création des règles Firewall
+$PREFIX iptables -t nat -A POSTROUTING -o virbr0 -s 192.168.122.0/24 -j MASQUERADE
+$PREFIX iptables -P FORWARD DROP
+$PREFIX iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+$PREFIX iptables -A FORWARD -s 192.168.122.0/24 -j ACCEPT
+$PREFIX iptables -A FORWARD -s 192.168.122.0/24 -d 192.168.122.0/24 -j ACCEPT
+$PREFIX iptables -A FORWARD -j log --log-prefix='[cuckoo]'
+
+## Persistence des règles
+$PREFIX iptables-save > /etc/iptables/rules.v4
+
+echo 1 | $PREFIX tee -a /proc/sys/net/ipv4/ip_forward
+$PREFIX sysctl -w net.ipv4.ip_forward=1
 
 # Création des scripts de démarrage
 
