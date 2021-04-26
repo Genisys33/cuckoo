@@ -218,8 +218,8 @@ $PREFIX iptables -A FORWARD -s 192.168.122.0/24 -j ACCEPT
 $PREFIX iptables -A FORWARD -s 192.168.122.0/24 -d 192.168.122.0/24 -j ACCEPT
 $PREFIX iptables -A FORWARD -j log --log-prefix='[cuckoo]'
 
-## Persistence des règles
-$PREFIX iptables-save > /etc/iptables/rules.v4
+### Persistence des règles
+#$PREFIX iptables-save > /etc/iptables/rules.v4
 
 echo 1 | $PREFIX tee -a /proc/sys/net/ipv4/ip_forward
 $PREFIX sysctl -w net.ipv4.ip_forward=1
